@@ -6,7 +6,7 @@
 
 
 ## Introduction 
-Welcome! This is an example of a React application with the purpose of exploring my React & SCSS Front-end skills. SA simple SPA will be created based on the provided mockup and make a few API calls to a public web API of [theMovieDB].
+Welcome! This is an example of a React application with the purpose of exploring my React & SCSS Front-end skills. A simple SPA will be created based on the provided mockup and make a few API calls to a public web API of [theMovieDB].
 
 ## Features
 The main feature of this project is to show movies that can be filtered by name and year. Still taking into account the whole mobile friendly part. Client side caching were implemented in the initials request of the app, and its caching is settled for a period of 10 minutes, after that when the user request the initials data it will be set again.
