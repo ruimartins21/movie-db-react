@@ -1,35 +1,36 @@
-import React from "react";
-import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
-import styled from 'styled-components';
+import React, { lazy, Suspense } from 'react';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
-import SideNavBar from "./components/sidenavbar";
+import './css/app.scss';
 
-import Discover from "./pages/discover";
+import { ErrorBoundary } from './components/errorboundary';
+import { ContentWrapper, Loading, PageContainer } from './styles';
 
-import './css/app.scss'; 
+const Discover = lazy(() => import('./pages/discover'));
+const SideNavBar = lazy(() => import('./components/sidenavbar'));
 
 export default class App extends React.Component {
-  render () {
+  render() {
     return (
       <Router>
-        <PageContainer>
-          <SideNavBar {...this.props} />
-          <ContentWrapper>
-            <Switch>
-              <Route path="/discover" component={Discover} {...this.props}/>
-            </Switch>
-          </ContentWrapper>
-        </PageContainer>
+        <ErrorBoundary>
+          <Suspense fallback={<Loading className='loading' />}>
+            <PageContainer>
+              <SideNavBar {...this.props} />
+              <ContentWrapper>
+                <Switch>
+                  <Route path='/' component={Discover} {...this.props} />
+                  <Route
+                    path='/discover'
+                    component={Discover}
+                    {...this.props}
+                  />
+                </Switch>
+              </ContentWrapper>
+            </PageContainer>
+          </Suspense>
+        </ErrorBoundary>
       </Router>
     );
   }
 }
-
-
-const ContentWrapper = styled.main`
-  padding-left: 280px;
-`
-
-const PageContainer = styled.main`
-  overflow-x: hidden;
-`
