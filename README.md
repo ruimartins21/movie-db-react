@@ -2,7 +2,7 @@
 
 ![Movie DB](./src/images/gif.gif)
 
-[![Demo](https://img.shields.io/badge/Go-to_the_app-red.svg?style=flat-square)](https://movie-db-react-ruimartins.netifly.app)
+[![Demo](https://img.shields.io/badge/Go-to_the_app-red.svg?style=flat-square)](https://gallant-poitras-b03cd8.netlify.app/)
 
 
 ## Introduction 
