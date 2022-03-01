@@ -1,88 +1,122 @@
-import React from "react";
-import styled from 'styled-components';
+import React, { lazy, Profiler, Suspense, useEffect, useState } from 'react';
 
-import * as colors from "../../colors";
-import * as fetcher from "../../fetcher";
+import * as fetcher from '../../fetcher';
+import { CONSTANTS } from '../../utils/constants';
+import SearchFilters from '../../components/searchfilter';
+import {
+  getLocalStorage,
+  onRenderCallback,
+  debouncedFetchData,
+} from '../../utils/helpers';
+import {
+  Loading,
+  NoResults,
+  TotalCount,
+  MovieFilters,
+  MovieResults,
+  DiscoverWrapper,
+  MobilePageTitle,
+} from './styles';
 
-import SearchFilters from "../../components/searchfilter";
-import MovieList from "../../components/movielist";
+const MovieList = lazy(() => import('../../components/movielist'));
 
-export default class Discover extends React.Component {
-  constructor (props) {
-    super(props);
+const Discover = () => {
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [genreOptions, setGenreOptions] = useState([]);
 
-    this.state = {
-      keyword: '',
-      year: 0,
-      results: [],
-      totalCount: 0,
-      genreOptions: [],
-      ratingOptions: [
-        { id: 7.5, name: 7.5 },
-        { id: 8, name: 8 },
-        { id: 8.5, name: 8.5 },
-        { id: 9, name: 9 },
-        { id: 9.5, name: 9.5 },
-        { id: 10, name: 10 }
-      ],
-      languageOptions: [
-        { id: 'GR', name: 'Greek' },
-        { id: 'EN', name: 'English' },
-        { id: 'RU', name: 'Russian' },
-        { id: 'PO', name: 'Polish' }
-      ]
-    };
-  }
+  const fetchPopularMovies = () => {
+    let localData = getLocalStorage();
 
-  // TODO: Preload and set the popular movies and movie genres when page loads
+    setResults(localData.popularMovies.results);
+    setTotalCount(localData.popularMovies.total_results);
+  };
 
-  // TODO: Update search results based on the keyword and year inputs
+  const getInitialData = async () => {
+    setLoading(true);
+    let localData = getLocalStorage();
+    const now = new Date().getTime();
 
-  render () {
-    const { genreOptions, languageOptions, ratingOptions, totalCount, results } = this.state;
+    if (now >= localData?.expiry || !localData) {
+      try {
+        let [popularMovies, genres] = await Promise.all([
+          fetcher.getPopularMovies(),
+          fetcher.getMoviesGenres(),
+        ]);
 
-    return (
-      <DiscoverWrapper>
-        <MobilePageTitle>Discover</MobilePageTitle> {/* MobilePageTitle should become visible on mobile devices via CSS media queries*/}
-        <TotalCount>{totalCount} results</TotalCount>
+        localData = {
+          popularMovies: popularMovies.data,
+          genres: genres.data,
+          expiry: now + CONSTANTS.TEN_MINUTES,
+        };
+
+        localStorage.setItem(CONSTANTS.STORAGE, JSON.stringify(localData));
+
+        setLoading(false);
+      } catch (err) {
+        setLoading(false);
+      }
+    }
+
+    setResults(localData.popularMovies.results);
+    setTotalCount(localData.popularMovies.total_results);
+    setGenreOptions(localData.genres.genres);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    getInitialData();
+  }, []);
+
+  const searchMovies = (keyword, year) => {
+    setLoading(true);
+
+    if (!keyword && !year) {
+      fetchPopularMovies();
+      setLoading(false);
+    } else {
+      debouncedFetchData(keyword, year, (res) => {
+        setResults(res.results);
+        setTotalCount(res.total_results);
+        setLoading(false);
+      });
+    }
+  };
+
+  return (
+    <DiscoverWrapper>
+      <MobilePageTitle>Discover</MobilePageTitle>
+      {totalCount > 0 && <TotalCount>{totalCount} results</TotalCount>}
+      <Profiler id='MovieFilters' onRender={onRenderCallback}>
         <MovieFilters>
-          <SearchFilters 
-            genres={genreOptions} 
-            ratings={ratingOptions}  
-            languages={languageOptions}
-            searchMovies={(keyword, year) => this.searchMovies(keyword, year)}
+          <SearchFilters
+            genres={genreOptions}
+            ratings={CONSTANTS.RATING_OPTIONS}
+            languages={CONSTANTS.LANGUAGE_OPTIONS}
+            onSearch={(keyword, year) => searchMovies(keyword, year)}
           />
         </MovieFilters>
-        <MovieResults>
-          <MovieList 
-            movies={results || []}
-            genres={genreOptions || []}
-          />
-        </MovieResults>
-      </DiscoverWrapper>
-    )
-  }
+      </Profiler>
+
+      {results.length === 0 && !loading && (
+        <NoResults>Don't exist results.</NoResults>
+      )}
+
+      <Suspense fallback={<Loading className='loading' />}>
+        {results.length > 0 && genreOptions.length > 0 && !loading && (
+          <MovieResults>
+            <Profiler id='MovieList' onRender={onRenderCallback}>
+              <MovieList movies={results || []} genres={genreOptions || []} />
+            </Profiler>
+          </MovieResults>
+        )}
+      </Suspense>
+
+      {loading && <Loading className='loading' />}
+    </DiscoverWrapper>
+  );
 }
 
-const DiscoverWrapper = styled.main`
-  padding: 35px;
-`
 
-const MovieResults = styled.div`
-  display: inline-block;
-  width: calc(100% - 295px);
-`
-
-const MovieFilters = styled.div`
-  width: 280px;
-  float: right;
-  margin-top: 15px;
-`
-
-const MobilePageTitle = styled.h1`
-  display: none;
-`
-
-const TotalCount = styled.strong`
-  display: block;
-`
+export default Discover;

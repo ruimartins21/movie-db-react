@@ -1,16 +1,16 @@
 import React from "react";
-import styled from 'styled-components';
 
 import MovieItem from '../movieitem';
+import { MoviesWrapper } from "./styles";
 
-export default function MovieList ({ movies, genres }) {
+const MovieList = ({ movies, genres }) => {
+  const getGenders = (movie) => genres.filter((el) => movie.genre_ids.includes(el.id));
+
   return (
     <MoviesWrapper>
-      { movies.map(movie => <MovieItem key={movie.id} movie={movie} genres={genres} />)}
+      { movies.map(movie => <MovieItem key={movie.id} movie={movie} genres={getGenders(movie)} />)}
     </MoviesWrapper>
   )
 }
 
-const MoviesWrapper = styled.div`
-  position: relative;
-`
+export default MovieList;

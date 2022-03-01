@@ -1,57 +1,85 @@
-import React from "react";
-import styled, { css } from 'styled-components';
+import React, { useEffect, useState } from 'react';
 
-import * as colors from "../../colors";
-import ExpandableFilter from "../accordionfilter";
-import SearchBar from "../../components/searchbar";
+import YearIcon from '../../images/year-icon.png';
+import ExpandableFilter from '../accordionfilter';
+import SearchBar from '../../components/searchbar';
+import MoreFilters from '../../images/filter-icon.png';
+import SearchIcon from '../../images/search-icon-yellow.png';
+import {
+  Filter,
+  OtherFilters,
+  CategoryTitle,
+  FiltersWrapper,
+  SearchFiltersCont,
+} from './styles';
 
-import SearchIcon from "../../images/search-icon-yellow.png";
-import YearIcon from "../../images/year-icon.png";
+const SearchFilters = ({ genres, ratings, languages, onSearch }) => {
+  const [year, setYear] = useState(0);
+  const [keyword, setKeyword] = useState(null);
+  const [missingFields, setMissingFields] = useState(0);
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
 
-export default function SearchFilters({ genres, ratings, languages, onSearch }) {
+  const expandFilters = () => setShowMoreFilters(!showMoreFilters);
+
+  useEffect(() => {
+    if ((year.length > 0 && year.length < 4) || (!keyword && year.length === 4)) {
+      setMissingFields(year);
+    } else if (keyword != null) {
+      setMissingFields(0);
+      onSearch(keyword, year);
+    }
+  }, [keyword, year]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <FiltersWrapper>
-      <SearchFiltersCont className="search_inputs_cont" marginBottom>
+      <SearchFiltersCont
+        className='search_inputs_cont'
+        marginBottom
+        visible={showMoreFilters}
+      >
+        <Filter>
+          <SearchBar
+            id='keyword_search_input'
+            type='text'
+            icon={{ src: SearchIcon, alt: 'Magnifying glass' }}
+            placeholder='Search for movies'
+            visible={true}
+            onChange={(e) => (e.trim() !== keyword ? setKeyword(e) : null)}
+            errorMessage={
+              missingFields.length > 3 && !keyword
+                ? 'This field is required'
+                : ''
+            }
+          />
+          <OtherFilters
+            src={MoreFilters}
+            alt='More Filters'
+            onClick={expandFilters}
+          />
+        </Filter>
+
         <SearchBar
-          id="keyword_search_input" 
-          type="text"
-          icon={{ src: SearchIcon, alt: 'Magnifying glass' }} 
-          placeholder="Search for movies"
-        />
-        <SearchBar
-          id="year_search_input" 
-          type="number"
-          icon={{ src: YearIcon, alt: 'Calendar icon' }} 
-          placeholder="Year of release"
+          id='year_search_input'
+          type='number'
+          icon={{ src: YearIcon, alt: 'Calendar icon' }}
+          placeholder='Year of release'
+          visible={showMoreFilters}
+          errorMessage={
+            missingFields.length < 4 ? 'This field should have 4 digits.' : ''
+          }
+          onChange={setYear}
         />
       </SearchFiltersCont>
-      <SearchFiltersCont>
-        <CategoryTitle>Movies</CategoryTitle>
-        {/* TODO: Complete the "AccordionFilter" component and re-use it for all filter categories */}
-      </SearchFiltersCont>
+      {genres.length > 0 && (
+        <SearchFiltersCont visible={showMoreFilters}>
+          <CategoryTitle>Movies</CategoryTitle>
+          <ExpandableFilter title='Select genre(s)' options={genres}></ExpandableFilter>
+          <ExpandableFilter title='Select min. vote' options={ratings}></ExpandableFilter>
+          <ExpandableFilter title='Select language' options={languages}></ExpandableFilter>
+        </SearchFiltersCont>
+      )}
     </FiltersWrapper>
   );
 }
 
-const FiltersWrapper = styled.div`
-  position: relative;
-`
-
-const SearchFiltersCont = styled.div`
-  background-color: white;
-  padding: 20px;
-  border-radius: 5px;
-  transition: all .3s ease-in-out;
-
-  .search_bar_wrapper:first-child {
-    margin-bottom: 15px;
-  }
-  
-  ${props => props.marginBottom && css`
-    margin-bottom: 15px;
-  `}
-`
-
-const CategoryTitle = styled.h3`
-  margin: 0 0 15px 0;
-`
+export default SearchFilters;
