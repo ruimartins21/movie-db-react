@@ -1,18 +1,21 @@
-import React from "react";
-import styled from 'styled-components';
+import React from 'react';
 
+import { CheckboxCont } from './styles';
 
-export default function Checkbox ({ id, name, checked, label, onChange }) {
-  // TODO: Style the component and checkmark to look like the mockup provided
+const Checkbox = ({ id, name, checked, label, onChange }) => {
   return (
     <CheckboxCont>
-      <input type="checkbox" id={id} name={name} checked={checked} onChange={e => onChange(e.target.checked)}></input>
+      <input
+        type='checkbox'
+        data-testid="checkbox"
+        id={id}
+        name={name}
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      ></input>
       <label htmlFor={id}>{label}</label>
     </CheckboxCont>
-  )
-
+  );
 }
 
-const CheckboxCont = styled.div`
-  position: relative;
-`
+export default Checkbox;
